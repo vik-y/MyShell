@@ -1,7 +1,7 @@
 # Please refer to make-utility-notes.pdf - also in the zip file
 
 LIB=-lreadline -lcurses    #read gcc manpages
-CFLAGS=-DUNIX -ansi -pedantic-errors #read gcc manpages
+CFLAGS=-DUNIX  #read gcc manpages
 DEBUG=-g
 #DEBUG=
 
