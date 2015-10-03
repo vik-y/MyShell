@@ -8,14 +8,18 @@
 #include <sys/types.h>
 #include <signal.h>
 
+
+#define HISTORYLENGTH 100 // 100 commands will be stored in history
+
+
 enum BUILTIN_COMMANDS {
 	NO_SUCH_BUILTIN=0,
 	EXIT,
 	JOBS
 };
 
-char history_count;
-char job_count;
+int historyCount;
+int jobsCount;
 char history[100][20];
 char jobs[100][20];
 pid_t background_pid;
@@ -47,7 +51,7 @@ void printPrompt(){
 	char cwd[256];
 
 	if (getcwd(cwd, sizeof(cwd)) == 0){
-		perror("getcwd() ain't workin dudeee");
+		perror("getcwd() is not working");
 	}else{
 		printf("MyShell:%s",cwd);
 
@@ -75,6 +79,8 @@ isBuiltInCommand(char * cmd){
 int main (int argc, char **argv)
 {
 	char * cmdLine;
+	int historyIndex;
+	int jobOffset;
 	parseInfo *info; /*info stores all the information returned by parser.*/
 	struct commandType *com; /*com stores command name and Arg list for one command.*/
 
@@ -103,9 +109,16 @@ int main (int argc, char **argv)
 			char *tmp;
 			int num;
 			tmp = cmdLine+1; // Take location after '!'
-			num = atoi(tmp); // Convert the remaining location to an int value
+			num = atoi(tmp); // Convert the values after ! to int
 			printf("Result %d\n", num);
 
+			if(num<0){
+				// !-x case
+
+			}
+			else{
+				// !x case
+			}
 		}
 
 		/*calls the parser*/
@@ -129,7 +142,12 @@ int main (int argc, char **argv)
 			exit(1);
 		}
 
+		strcpy(history[historyIndex], cmdLine);
+		historyCount++;
+		historyIndex++;
 		/*insert your code here.*/
+
+		printHistory();
 
 		free_info(info);
 		free(cmdLine);
