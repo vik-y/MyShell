@@ -15,7 +15,11 @@
 enum BUILTIN_COMMANDS {
 	NO_SUCH_BUILTIN=0,
 	EXIT,
-	JOBS
+	JOBS,
+	CD,
+	HISTORY,
+	KILL,
+	HELP
 };
 
 int historyCount;
@@ -26,6 +30,8 @@ pid_t background_pid;
 
 void printHistory(){
 	/*Prints History*/
+
+	printf("History\n");
 	int i = 0;
 
 	while(history[i][0] != '\0'){
@@ -35,6 +41,7 @@ void printHistory(){
 }
 
 void printJobs(){
+	printf("Background Jobs\n");
 	int i = 0;
 	if(jobs[i][0] != '\0'){
 		printf("%d %s\n", i+1, *(jobs + i));
@@ -72,6 +79,21 @@ isBuiltInCommand(char * cmd){
 	if ( strncmp(cmd, "exit", strlen("exit")) == 0){
 		return EXIT;
 	}
+	if ( strncmp(cmd, "jobs", strlen("jobs")) == 0){
+		return JOBS;
+	}
+	if ( strncmp(cmd, "cd", strlen("cd")) == 0){
+		return CD;
+	}
+	if ( strncmp(cmd, "kill", strlen("kill")) == 0){
+		return KILL;
+	}
+	if ( strncmp(cmd, "history", strlen("history")) == 0){
+		return HISTORY;
+	}
+	if ( strncmp(cmd, "help", strlen("help")) == 0){
+		return HELP;
+	}
 	return NO_SUCH_BUILTIN;
 }
 
@@ -79,10 +101,18 @@ isBuiltInCommand(char * cmd){
 int main (int argc, char **argv)
 {
 	char * cmdLine;
-	int historyIndex;
+	int historyIndex =0;
 	int jobOffset;
+	int jobsIndex = 0;
 	parseInfo *info; /*info stores all the information returned by parser.*/
 	struct commandType *com; /*com stores command name and Arg list for one command.*/
+
+	FILE *inputfile = NULL;
+	FILE *outputfile = NULL;
+	int STDIN, STDOUT;
+
+	STDIN = dup(fileno(stdin)); // See what dup command does
+	STDOUT = dup(fileno(stdout));
 
 #ifdef UNIX
 	fprintf(stdout, "This is the UNIX/LINUX version\n");
@@ -137,17 +167,94 @@ int main (int argc, char **argv)
 			free(cmdLine);
 			continue;
 		}
+
+
 		/*com->command tells the command name of com*/
 		if (isBuiltInCommand(com->command) == EXIT){
 			exit(1);
 		}
 
-		strcpy(history[historyIndex], cmdLine);
-		historyCount++;
-		historyIndex++;
+		/* Additonal inbuilt functions start here */
+		if (isBuiltInCommand(com->command) == JOBS){
+			printJobs();
+		}
+		if (isBuiltInCommand(com->command) == HISTORY){
+			printHistory();
+		}
+		if (isBuiltInCommand(com->command) == KILL){
+
+			const char * const path = com->VarList[1];
+			// why const?
+			int kill_pid = 0;
+			kill_pid = atoi(com->VarList[1]); //Get 1st argument from command
+
+			if(kill_pid <= 0){
+				printf("\nInvalid pid:%d\n", kill_pid);
+			}else{
+				kill(kill_pid, SIGKILL); // Using inbuilt function to kill a program
+			}
+
+		}
+		if (isBuiltInCommand(com->command) == HELP){
+			printf("help: prints this help screen.\n\n");
+			printf(" jobs - prints out the list of running background jobs.\n\n");
+			printf(" kill [process_id] - kills background process_id to kill a running background job.\n\n");
+			printf(" history - display a record of the last 100 commands typed.\n\n");
+			printf(" ![int] - execute [int] command in history array\n\n");
+			printf(" cd [location] - change directory\n\n");
+			printf(" sometext < infile.txt > outfile.txt - create a new process to run sometext and assign STDIN for the new process to infile and STDOUT for the new process to outfile\n\n");
+			printf(" exit - exit or quit shell.\n\n");
+			printf("Append & to the end of any command to run it in the background.\n\n");
+
+		}
+
+		/* Additional inbuilt functions end here */
+
 		/*insert your code here.*/
 
-		printHistory();
+		/*check if Background & given*/
+		if(info->boolBackground){
+			printf("& found\n");
+			// Run the process in background
+			char * previous_command;
+			previous_command = (char*)com->command;
+			printf("%s\n", previous_command);
+
+			strcpy(jobs[jobsIndex], cmdLine);
+			jobsIndex++;
+		}
+
+		//adds to history
+		strcpy(history[historyCount], cmdLine);
+		historyCount++;
+		//printHistory();
+		//printJobs();
+
+		if(strcmp(info->inFile,"")!=0){
+			// Checks if a file for STDIN was given
+			inputfile = fopen(info->inFile, "r");
+			dup2(fileno(inputfile), 0);
+		}
+
+		if(strcmp(info->outFile,"")!=0){
+			// Checks if a file for STDOUT was given
+			outputfile = fopen(info->outFile, "w");
+			dup2(fileno(outputfile), 1);
+		}
+
+		fflush(stdout);
+		fflush(stdin);
+
+		if (inputfile != NULL){
+			fclose(inputfile);
+		}
+
+		if (outputfile != NULL){
+			fclose(outputfile);
+		}
+
+		dup2(STDIN,0);
+		dup2(STDOUT,1);
 
 		free_info(info);
 		free(cmdLine);
