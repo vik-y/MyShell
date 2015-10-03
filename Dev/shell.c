@@ -44,20 +44,14 @@ void printJobs(){
 /*prints current working directory*/
 void printPrompt(){
 	// Satisfies Requirement 1
-    char cwd[256];
-    char *username=getenv("USER");
+	char cwd[256];
 
-    char hostname[1024];
+	if (getcwd(cwd, sizeof(cwd)) == 0){
+		perror("getcwd() ain't workin dudeee");
+	}else{
+		printf("MyShell:%s",cwd);
 
-    hostname[1023] = '\0';
-    gethostname(hostname, 1023);
-
-    if (getcwd(cwd, sizeof(cwd)) == 0){
-	perror("getcwd() ain't workin dudeee");
-    }else{
-	printf("MyShell:%s",cwd);
-
-    }
+	}
 }
 
 
@@ -104,6 +98,15 @@ int main (int argc, char **argv)
 #endif
 
 		/*insert your code about history and !x !-x here*/
+		if(cmdLine[0] == '!'){
+			// !-x or !x
+			char *tmp;
+			int num;
+			tmp = cmdLine+1; // Take location after '!'
+			num = atoi(tmp); // Convert the remaining location to an int value
+			printf("Result %d\n", num);
+
+		}
 
 		/*calls the parser*/
 		info = parse(cmdLine);
