@@ -111,8 +111,8 @@ int main (int argc, char **argv)
 	FILE *outputfile = NULL;
 	int STDIN, STDOUT;
 
-	STDIN = dup(fileno(stdin)); // See what dup command does
-	STDOUT = dup(fileno(stdout));
+	STDIN = dup(fileno(stdin)); // Telling shell to use default STDIN
+	STDOUT = dup(fileno(stdout)); // Telling shell to use default STDOUT
 
 #ifdef UNIX
 	fprintf(stdout, "This is the UNIX/LINUX version\n");
@@ -144,10 +144,11 @@ int main (int argc, char **argv)
 
 			if(num<0){
 				// !-x case
-
+				strcpy(cmdLine, history[historyCount+num]);
 			}
 			else{
 				// !x case
+				strcpy(cmdLine, history[num-1]);
 			}
 		}
 
@@ -158,7 +159,7 @@ int main (int argc, char **argv)
 			continue;
 		}
 		/*prints the info struct*/
-		print_info(info);
+		//print_info(info);
 
 		/*com contains the info. of the command before the first "|"*/
 		com=&info->CommArray[0];
@@ -184,7 +185,6 @@ int main (int argc, char **argv)
 		if (isBuiltInCommand(com->command) == KILL){
 
 			const char * const path = com->VarList[1];
-			// why const?
 			int kill_pid = 0;
 			kill_pid = atoi(com->VarList[1]); //Get 1st argument from command
 
@@ -212,7 +212,15 @@ int main (int argc, char **argv)
 
 		/*insert your code here.*/
 
-		/*check if Background & given*/
+
+		//adds to history
+		strcpy(history[historyCount], cmdLine);
+		historyCount++;
+		//printHistory();
+		//printJobs();
+
+
+		/*check if Background process request*/
 		if(info->boolBackground){
 			printf("& found\n");
 			// Run the process in background
@@ -223,27 +231,37 @@ int main (int argc, char **argv)
 			strcpy(jobs[jobsIndex], cmdLine);
 			jobsIndex++;
 		}
+		else{
+			// If not background then it should run in the foreground
+			int status;
+			pid_t pid;
+			pid = fork(); // Making a child to run the command
+			if(pid==0){
+				if(strcmp(info->inFile,"")!=0){
+					// Checks if a file was specified to be used as stdin
+					inputfile = fopen(info->inFile, "r");
+					dup2(fileno(inputfile), 0);
+				}
 
-		//adds to history
-		strcpy(history[historyCount], cmdLine);
-		historyCount++;
-		//printHistory();
-		//printJobs();
-
-		if(strcmp(info->inFile,"")!=0){
-			// Checks if a file for STDIN was given
-			inputfile = fopen(info->inFile, "r");
-			dup2(fileno(inputfile), 0);
+				if(strcmp(info->outFile,"")!=0){
+					// Checks if a file was specified to be used as stdout
+					printf("outFile specified %s\n", info->outFile);
+					outputfile = fopen(info->outFile, "w");
+					dup2(fileno(outputfile), 1);
+				}
+				execvp(com->command, com->VarList);
+				printf("Invalid Command. Command Not found\n");
+				// If error happens then control comes here
+				exit(1);
+			}
+			else {
+				wait(&status); // Waiting for execvp to end
+				printf("\n");
+			}
 		}
 
-		if(strcmp(info->outFile,"")!=0){
-			// Checks if a file for STDOUT was given
-			outputfile = fopen(info->outFile, "w");
-			dup2(fileno(outputfile), 1);
-		}
-
-		fflush(stdout);
-		fflush(stdin);
+		fflush(stdout); // flushing the output
+		fflush(stdin); // flushing the input
 
 		if (inputfile != NULL){
 			fclose(inputfile);
@@ -253,10 +271,14 @@ int main (int argc, char **argv)
 			fclose(outputfile);
 		}
 
-		dup2(STDIN,0);
-		dup2(STDOUT,1);
+		dup2(STDIN, 0); // Resetting standard input to STDIN
+		dup2(STDOUT,1); // Resetting standard output to STDOUT
 
 		free_info(info);
+		/*
+		 * Note: There was a bug in free_info function which was not letting the
+		 * input and output pipes work ( "<" , ">") properly.
+		 */
 		free(cmdLine);
 	}/* while(1) */
 }
