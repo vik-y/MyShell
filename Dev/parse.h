@@ -1,3 +1,6 @@
+#ifndef PARSE_H_
+#define PARSE_H_
+
 #define MAX_VAR_NUM 10
 #define PIPE_MAX_NUM 10
 #define FILE_MAX_SIZE 40
@@ -24,7 +27,7 @@ parseInfo *parse(char *);      /* see details in README.parser file */
 void free_info(parseInfo *);   /* see details in README.parser file */
 void print_info(parseInfo *);  
 
-
+#endif
 
 
 
