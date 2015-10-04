@@ -93,8 +93,7 @@ isBuiltInCommand(char * cmd){
 }
 
 void runInBackground(job *j, char *command){
-	j[jobsIndex].pid = getpid();
-	// Storing the pid of background process
+	j[jobsIndex].pid = getpid();// Storing the pid of background process
 	// Will be used to kill a process
 
 	pid_t pid; int status;
@@ -137,6 +136,16 @@ void  INThandler(int sig)
 	signal(sig, SIG_IGN);
 	printf("\n");
 	signal(SIGINT, INThandler);
+}
+
+void killProcess(int kill_pid){
+	if(kill_pid<=jobsIndex && jobs[kill_pid].status==0){
+		kill(jobs[kill_pid].pid, SIGKILL); // Using inbuilt function to kill a program
+		jobs[kill_pid].status = 1 ; //
+		jobsCount[0]--;
+		printf("PID: %d Killed\n", kill_pid);
+	}
+	else printf("Job Does not Exist. Unable to kill\n");
 }
 
 int main (int argc, char **argv)
@@ -219,11 +228,26 @@ int main (int argc, char **argv)
 
 
 		/*com->command tells the command name of com*/
+
+		if (isBuiltInCommand(com->command) == CD){
+			chdir(com->VarList[1]);
+		}
+
 		if (isBuiltInCommand(com->command) == EXIT){
-			if(jobsCount[0]!=0){
+			if(jobsCount[0]>0){
 				//pending processes are there
 				printf("Pending processes are there\n");
 				printf("Are you sure you want to exit, pending processes will be killed\n");
+
+				char c = getchar();
+				if(c=='y' || c=='Y'){
+					// Kill all pending processes before exiting
+					// This satisfies Requiremenet 9
+					int i;
+					for(i=0;i<=jobsIndex;i++){
+						killProcess(i);
+					}
+				}
 			}
 			else exit(1);
 		}
@@ -244,9 +268,7 @@ int main (int argc, char **argv)
 			if(kill_pid <= 0){
 				printf("\nInvalid pid:%d\n", kill_pid);
 			}else{
-				kill(jobs[kill_pid].pid, SIGKILL); // Using inbuilt function to kill a program
-				jobs[kill_pid].status = 1 ; //
-				jobsCount[0]--;
+				killProcess(kill_pid);
 			}
 
 		}
@@ -343,9 +365,3 @@ int main (int argc, char **argv)
 		free(cmdLine);
 	}/* while(1) */
 }
-
-
-
-
-
-

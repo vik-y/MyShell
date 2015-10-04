@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <string.h>
 
+extern int *jobsCount;
+
 void addJob(job *jobs, int jobsIndex, char *cmdLine){
 	jobs[jobsIndex].id = jobsIndex;
 	jobs[jobsIndex].status = 0;
@@ -22,7 +24,8 @@ void deleteJob(job *j, int id){
 
 void printJobs(job *j, int jobsIndex){
 	int i;
-	printf("ID	Command jobsIndex %d\n", jobsIndex);
+	printf("Number of pending processes %d\n", jobsCount[0]);
+	printf("ID	Command\n");
 
 	for(i=0;i<jobsIndex;i++){
 		if(i!=0 && j[i].status==0) printf("%d	%s\n", j[i].id, j[i].command);
