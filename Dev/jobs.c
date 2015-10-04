@@ -5,10 +5,12 @@
 
 #include "jobs.h"
 #include <stdio.h>
+#include <string.h>
 
-void addJob(job *j, job newjob, int jobsIndex){
-	j = &newjob;
-	printJobs(j, jobsIndex);
+void addJob(job *jobs, int jobsIndex, char *cmdLine){
+	jobs[jobsIndex].id = jobsIndex;
+	jobs[jobsIndex].status = 0;
+	strcpy(jobs[jobsIndex].command, cmdLine);
 }
 
 void deleteJob(job *j, int id){

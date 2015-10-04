@@ -28,7 +28,7 @@ enum BUILTIN_COMMANDS {
 };
 
 int historyCount=0;
-int jobsCount = 0;
+int *jobsCount;
 char history[100][20];
 job *jobs;
 pid_t background_pid;
@@ -93,6 +93,10 @@ isBuiltInCommand(char * cmd){
 }
 
 void runInBackground(job *j, char *command){
+	j[jobsIndex].pid = getpid();
+	// Storing the pid of background process
+	// Will be used to kill a process
+
 	pid_t pid; int status;
 	parseInfo * info;
 	struct commandType *com;
@@ -121,8 +125,18 @@ void runInBackground(job *j, char *command){
 	wait(&status); // Waiting for thread to terminate
 	printf("\nCompleted job with pid:%d \n", jobsIndex);// Job is complete
 
-	printJobs(j, jobsIndex+1);
-	j[jobsIndex].status=1;// Deleting the job
+	j[jobsIndex].status=COMPLETE;// Setting the flag of job as Complete
+	jobsCount[0]--;
+	printf("Number of pending processes %d\n", jobsCount[0]);
+}
+
+void  INThandler(int sig)
+{
+	char  c;
+
+	signal(sig, SIG_IGN);
+	printf("\n");
+	signal(SIGINT, INThandler);
 }
 
 int main (int argc, char **argv)
@@ -138,10 +152,13 @@ int main (int argc, char **argv)
 	int STDIN, STDOUT;
 
 	shmid = shmget(IPC_PRIVATE, 300*sizeof(job), IPC_CREAT | 0666);
-	jobs = (job *)shmat(shmid, NULL, 0);
+	jobs = (job *)shmat(shmid, NULL, 0); // Assigning shared memory to jobs so that all processes can see pending jobs
 	jobs[0].id = 0;
 
+	shmid = shmget(IPC_PRIVATE, 1*sizeof(int), IPC_CREAT | 0666);
+	jobsCount = (int *)shmat(shmid, NULL, 0); // Shared memory to keep track of incomplete processes count
 
+	jobsCount[0] = 0;
 	STDIN = dup(fileno(stdin)); // Telling shell to use default STDIN
 	STDOUT = dup(fileno(stdout)); // Telling shell to use default STDOUT
 
@@ -203,7 +220,12 @@ int main (int argc, char **argv)
 
 		/*com->command tells the command name of com*/
 		if (isBuiltInCommand(com->command) == EXIT){
-			exit(1);
+			if(jobsCount[0]!=0){
+				//pending processes are there
+				printf("Pending processes are there\n");
+				printf("Are you sure you want to exit, pending processes will be killed\n");
+			}
+			else exit(1);
 		}
 
 		/* Additonal inbuilt functions start here */
@@ -222,7 +244,9 @@ int main (int argc, char **argv)
 			if(kill_pid <= 0){
 				printf("\nInvalid pid:%d\n", kill_pid);
 			}else{
-				kill(kill_pid, SIGKILL); // Using inbuilt function to kill a program
+				kill(jobs[kill_pid].pid, SIGKILL); // Using inbuilt function to kill a program
+				jobs[kill_pid].status = 1 ; //
+				jobsCount[0]--;
 			}
 
 		}
@@ -254,11 +278,11 @@ int main (int argc, char **argv)
 			//Adding a new job
 			// convert this into a function
 			jobsIndex++;
-			jobs[jobsIndex].id = jobsIndex;
-			jobs[jobsIndex].status = 0;
-			strcpy(jobs[jobsIndex].command, cmdLine);
+			jobsCount[0]++;
+			addJob(jobs, jobsIndex, cmdLine);
 			//Done adding a new job
 
+			printf("Number of pending processes %d\n", jobsCount[0]);
 			pid = fork();
 			if(pid==0){
 				//forking to run this process in background since '&' was found
@@ -290,6 +314,8 @@ int main (int argc, char **argv)
 				exit(1);
 			}
 			else {
+				signal(SIGINT, INThandler);
+				//kill(pid, SIGKILL);
 				wait(&status); // Waiting for execvp to end
 				printf("\n");
 			}

@@ -10,13 +10,16 @@
 
 #include "parse.h"
 
+#define COMPLETE 1
+
 typedef struct job{
 	int id;
 	char command[30];
 	int status;
+	int pid;
 }job;
 
-void addJob(job *j, job newjob, int jobsIndex);
+void addJob(job *j, int, char *);
 
 void deleteJob(job *j, int id);
 
