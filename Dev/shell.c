@@ -7,7 +7,12 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <signal.h>
+#include "jobs.h" // Created a jobs.h and jobs.c file to handle background processes effectively
 
+// Including for shared memory usage
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
 
 #define HISTORYLENGTH 100 // 100 commands will be stored in history
 
@@ -25,8 +30,10 @@ enum BUILTIN_COMMANDS {
 int historyCount;
 int jobsCount;
 char history[100][20];
-char jobs[100][20];
+job *jobs;
 pid_t background_pid;
+int jobsIndex;
+int historyIndex;
 
 void printHistory(){
 	/*Prints History*/
@@ -40,17 +47,6 @@ void printHistory(){
 	}
 }
 
-void printJobs(){
-	printf("Background Jobs\n");
-	int i = 0;
-	if(jobs[i][0] != '\0'){
-		printf("%d %s\n", i+1, *(jobs + i));
-		++i;
-	}else{
-		printf("\n No background jobs \n");
-	}
-
-}
 
 /*prints current working directory*/
 void printPrompt(){
@@ -64,7 +60,6 @@ void printPrompt(){
 
 	}
 }
-
 
 char *
 buildPrompt()
@@ -97,19 +92,45 @@ isBuiltInCommand(char * cmd){
 	return NO_SUCH_BUILTIN;
 }
 
+void runInBackground(job *j, char *command){
+	parseInfo * info;
+	struct commandType *com;
+	/*calls the parser*/
+	info = parse(command);
+	if (info == NULL){
+		printf("Error\n"); exit(1);
+	}
+	/*prints the info struct*/
+	//print_info(info);
+
+	/*com contains the info. of the command before the first "|"*/
+	com=&info->CommArray[0];
+	if ((com == NULL)  || (com->command == NULL)) {
+		free_info(info);
+		//free(cmdLine);
+		//continue;
+	}
+	execvp(com->command, com->VarList);
+
+	printf("\njob with pid %d completed\n", jobsIndex);
+	deleteJob(jobs, jobsIndex);
+}
 
 int main (int argc, char **argv)
 {
 	char * cmdLine;
-	int historyIndex =0;
+	int shmid;
 	int jobOffset;
-	int jobsIndex = 0;
 	parseInfo *info; /*info stores all the information returned by parser.*/
 	struct commandType *com; /*com stores command name and Arg list for one command.*/
 
 	FILE *inputfile = NULL;
 	FILE *outputfile = NULL;
 	int STDIN, STDOUT;
+
+	shmid = shmget(IPC_PRIVATE, 1*sizeof(job), IPC_CREAT | 0666);
+	jobs = (job *)shmat(shmid, NULL, 0);
+
 
 	STDIN = dup(fileno(stdin)); // Telling shell to use default STDIN
 	STDOUT = dup(fileno(stdout)); // Telling shell to use default STDOUT
@@ -177,7 +198,7 @@ int main (int argc, char **argv)
 
 		/* Additonal inbuilt functions start here */
 		if (isBuiltInCommand(com->command) == JOBS){
-			printJobs();
+			printJobs(jobs);
 		}
 		if (isBuiltInCommand(com->command) == HISTORY){
 			printHistory();
@@ -222,16 +243,59 @@ int main (int argc, char **argv)
 
 		/*check if Background process request*/
 		if(info->boolBackground){
-			printf("& found\n");
-			// Run the process in background
-			char * previous_command;
-			previous_command = (char*)com->command;
-			printf("%s\n", previous_command);
+			pid_t pid;
+			job *temp;
 
-			strcpy(jobs[jobsIndex], cmdLine);
+			temp = (job *)malloc(sizeof(job));
+			temp->command = (char *)malloc(sizeof(cmdLine));
+
+			printf("Writing: %s\n", cmdLine);
+
 			jobsIndex++;
+			temp->id = jobsIndex; temp->next = NULL; strcpy(temp->command, cmdLine);
+			addJob(jobs, temp);
+
+			pid = fork();
+			if(pid==0){
+				runInBackground(jobs, cmdLine);
+				exit(1);
+			}
+			/*pid_t pid;
+			job *temp;
+
+			temp = (job *)malloc(sizeof(job));
+			temp->command = (char *)malloc(sizeof(cmdLine));
+
+			printf("Writing: %s\n", cmdLine);
+
+			jobsIndex++;
+			temp->id = jobsIndex; temp->next = NULL; strcpy(temp->command, cmdLine);
+			addJob(jobs, temp);
+			printJobs(jobs);
+
+			 Adding job into background ends here
+			pid = fork(); // fork a thread inside which we will wait for processes to terminate;
+			if(pid==0){
+				int status;
+				// We will fork another process inside a fork process as we want to wait for the process
+				// to terminate and then update the jobs table
+				pid = fork();
+				if(pid==0){
+					execvp(com->command, com->VarList);
+					exit(1);
+				}
+				wait(&status);
+				printf("\njob with pid %d completed\n", jobsIndex);
+
+				deleteJob(jobs, jobsIndex);
+				exit(1);
+			}
+			else{
+				printf("Background job with pid: %d started\n", jobsIndex);
+				printJobs(jobs);
+			}*/
 		}
-		else{
+		else if(isBuiltInCommand(com->command)==NO_SUCH_BUILTIN){
 			// If not background then it should run in the foreground
 			int status;
 			pid_t pid;
