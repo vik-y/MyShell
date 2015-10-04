@@ -8,7 +8,7 @@ DEBUG=-g
 all: shell
 
 
-shell:	shell.c parse.c parse.h
+shell:	shell.c parse.c jobs.c parse.h
 	gcc $(CFLAGS) $(DEBUG) shell.c parse.c jobs.c -o shell $(LIB)
 clean:
 	rm -f shell *~
