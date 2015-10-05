@@ -3,14 +3,18 @@ by Vikas Yadav
 IMT2013060
 -----------------------------------------------------------------------
 
+
 Usage: 
+-----------------------------------------------------------------------
 Run: make
 and then: ./shell 
 
 To exit the shell type: exit  
 
 
+
 Inbuilt commands added: 
+-----------------------------------------------------------------------
 JOBS,
 CD,
 HISTORY,
@@ -18,27 +22,32 @@ KILL,
 HELP
 
 
-Requirements Complements:
+Requirements Completed:
 -----------------------------------------------------------------------
-1. printPrompt - Done
-2. No idea 
-3. Something related to path and execvp  - No Idea 
-4. stdin in and stdout - Done
-5. background processes: Parsing part done. Running the process
-   and assigning PID and stuff yet to be done
-   
-6. History done. Need to add support for infinite number of 
-	commands - Incomplete   
-	
-7. Repeating previous commands - Parsing done - Done
-8. inbuilt jobs - kill remaining 
-9. show background processes to user before exiting - Incomplete
-   Kill all the background processes before exiting - incomplete 
+All requirements mentioned in the pdf are met.
+
+How jobs were implemented? 
+Made a structure job. Made an array of it and allocated it as a shared 
+memory so that all processes could see it. Whenever background job 
+was requested, a new fork was made which added to the new job to 
+jobs array and did execvp to run the job and waited till it completed. 
+The same jobs array was used to show background jobs and remaining 
+processes..
+
+How history was implemented?
+A history array was made. This was not shared. In the main thread every
+command typed got copied to this array.  
+
+The way in which code works is very clearly mentioned in the code. 
+
+I added two new files: jobs.h and jobs.c to make handling of jobs easier. 
+
 
 
 Incomplete Requirements: 
 -----------------------------------------------------------------------
 None. All done
+
 
 Additional Features: 
 -----------------------------------------------------------------------
@@ -52,4 +61,5 @@ Pressing Ctrl+C doesn't exit the shell. Instead it interrups the process
 which is running in the foreground and if no process is running in foreground
 then it does nothing. Shell can be exit only by typing "exit"
 
+A well documented code. 
 
