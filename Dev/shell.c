@@ -352,12 +352,16 @@ int main (int argc, char **argv)
 						}
 						if(info->pipeNum>0 && i<info->pipeNum){
 							// This case is used for handling pipes "|"
-							outputfile = fopen("out.txt", "w");
+							char filename[15];
+							sprintf(filename, "out%d.txt", i);
+							outputfile = fopen(filename, "w");
 							dup2(fileno(outputfile), 1);
 						}
 						if(i!=0){
 							// This case is used for handling pipes "|"
-							inputfile = fopen("out.txt", "r");
+							char filename[15];
+							sprintf(filename, "out%d.txt", i-1);
+							inputfile = fopen(filename, "r");
 							dup2(fileno(inputfile), 0);
 						}
 						execvp(comm->command, comm->VarList);

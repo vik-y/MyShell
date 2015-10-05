@@ -1,7 +1,7 @@
 MyShell
 by Vikas Yadav
 IMT2013060
----------------------------------------------------------
+-----------------------------------------------------------------------
 
 Usage: 
 Run: make
@@ -18,7 +18,8 @@ KILL,
 HELP
 
 
-Requirements Met:
+Requirements Complements:
+-----------------------------------------------------------------------
 1. printPrompt - Done
 2. No idea 
 3. Something related to path and execvp  - No Idea 
@@ -33,3 +34,22 @@ Requirements Met:
 8. inbuilt jobs - kill remaining 
 9. show background processes to user before exiting - Incomplete
    Kill all the background processes before exiting - incomplete 
+
+
+Incomplete Requirements: 
+-----------------------------------------------------------------------
+None. All done
+
+Additional Features: 
+-----------------------------------------------------------------------
+Added support for using pipes "|". Tested by using grep. The way it was 
+implemented was by redirecting the output of the command before "|" to 
+an intermediate file and then let the command after "|" use it as stdin. 
+Implemented a small method by which we can add n number of "|". Again 
+tested using grep. 
+
+Pressing Ctrl+C doesn't exit the shell. Instead it interrups the process
+which is running in the foreground and if no process is running in foreground
+then it does nothing. Shell can be exit only by typing "exit"
+
+
