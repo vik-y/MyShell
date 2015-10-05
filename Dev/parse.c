@@ -211,9 +211,6 @@ void free_info (parseInfo *info) {
       strcpy(info->inFile, "");
       strcpy(info->outFile, "");
       //Bug patch ends here
-      // The bug would remain there if once specified until
-      // the values are changed. That forces output to be piped
-      // to other files even though we are not specifying
     }
   }
   free(info);

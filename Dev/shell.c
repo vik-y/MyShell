@@ -27,17 +27,14 @@ enum BUILTIN_COMMANDS {
 	HELP
 };
 
-int historyCount=0;
-int *jobsCount;
-char history[100][20];
-job *jobs;
-pid_t background_pid;
-int jobsIndex=0;
-int historyIndex=0;
+int historyCount=0; //Stores number of items in history
+int *jobsCount; // Stores number of background processes
+char history[100][20]; // Stores an array of commands
+job *jobs; // An array of pending jobs
+int jobsIndex=0; // Offset of where to add a new job in jobs array
 
 void printHistory(){
 	/*Prints History*/
-
 	printf("History\n");
 	int i = 0;
 
@@ -70,7 +67,7 @@ buildPrompt()
 
 int
 isBuiltInCommand(char * cmd){
-
+	// added more builtin commands as per the requirement
 	if ( strncmp(cmd, "exit", strlen("exit")) == 0){
 		return EXIT;
 	}
@@ -93,36 +90,45 @@ isBuiltInCommand(char * cmd){
 }
 
 void runInBackground(job *j, char *command){
-	j[jobsIndex].pid = getpid();// Storing the pid of background process
-	// Will be used to kill a process
-
+	/*
+	 * Used to run a job in background.
+	 * Helps in implement background jobs functionality
+	 */
 	pid_t pid; int status;
 	parseInfo * info;
 	struct commandType *com;
+
 	/*calls the parser*/
 	info = parse(command);
 	if (info == NULL){
 		printf("Error\n"); exit(1);
 	}
-	/*prints the info struct*/
-	//print_info(info);
 
-	/*com contains the info. of the command before the first "|"*/
 	com=&info->CommArray[0];
 	if ((com == NULL)  || (com->command == NULL)) {
 		free_info(info);
 		//free(cmdLine);
 		//continue;
 	}
-	printf("\nStarted job with pid: %d \n", jobsIndex);
-	pid = fork();
+	/*parser done here*/
+
+	/*forking to run execvp in background */
+	printf("\nStarted job with pid: %d \n", jobsIndex); // Here pid is with respect to this shell - not OS
+	pid = fork(); // Creating a new thread which runs execvp
 	if(pid==0){
-		printf("runnning %d\n", (int)getpid());
+		j[jobsIndex].pid = getpid();
+		// Storing the pid of `background process
+		// Will be used to kill a process
+
+		printf("running %d\n", (int)getpid());
 		execvp(com->command, com->VarList); // Executing the program on a separate thread
 		exit(1);
 	}
-	wait(&status); // Waiting for thread to terminate
-	printf("\nCompleted job with pid:%d \n", jobsIndex);// Job is complete
+
+	wait(&status);
+	// Waiting for thread to terminate
+	// No need to wait pid since this will only capture the process forked above.
+	printf("\nCompleted background job with pid:%d \n", jobsIndex);// Job is complete
 
 	j[jobsIndex].status=COMPLETE;// Setting the flag of job as Complete
 	jobsCount[0]--;
@@ -131,18 +137,21 @@ void runInBackground(job *j, char *command){
 
 void  INThandler(int sig)
 {
+	// Used to handle the Ctrl+C event
+	// An add on feature
 	char  c;
-
 	signal(sig, SIG_IGN);
-	printf("\n");
-	signal(SIGINT, INThandler);
 }
 
 void killProcess(int kill_pid){
+	/*
+	 * Kills a process with pid <kill_pid> in the shell
+	 * kill_pid is a pid with respect to the shell - not system
+	 */
 	if(kill_pid<=jobsIndex && jobs[kill_pid].status==0){
 		kill(jobs[kill_pid].pid, SIGKILL); // Using inbuilt function to kill a program
-		jobs[kill_pid].status = 1 ; //
-		jobsCount[0]--;
+		jobs[kill_pid].status = 1 ; // jobs[kill_pid] gives the pid allocated by OS
+		//jobsCount[0]--;
 		printf("PID: %d Killed\n", kill_pid);
 	}
 	else printf("Job Does not Exist. Unable to kill\n");
@@ -165,11 +174,11 @@ int main (int argc, char **argv)
 	jobs[0].id = 0;
 
 	shmid = shmget(IPC_PRIVATE, 1*sizeof(int), IPC_CREAT | 0666);
-	jobsCount = (int *)shmat(shmid, NULL, 0); // Shared memory to keep track of incomplete processes count
+	jobsCount = (int *)shmat(shmid, NULL, 0); // Shared memory to keep track of background processes count
 
 	jobsCount[0] = 0;
-	STDIN = dup(fileno(stdin)); // Telling shell to use default STDIN
-	STDOUT = dup(fileno(stdout)); // Telling shell to use default STDOUT
+	STDIN = dup(fileno(stdin));
+	STDOUT = dup(fileno(stdout));
 
 #ifdef UNIX
 	fprintf(stdout, "This is the UNIX/LINUX version\n");
@@ -230,7 +239,7 @@ int main (int argc, char **argv)
 		/*com->command tells the command name of com*/
 
 		if (isBuiltInCommand(com->command) == CD){
-			chdir(com->VarList[1]);
+			chdir(com->VarList[1]); // Working
 		}
 
 		if (isBuiltInCommand(com->command) == EXIT){
@@ -242,17 +251,18 @@ int main (int argc, char **argv)
 				char c = getchar();
 				if(c=='y' || c=='Y'){
 					// Kill all pending processes before exiting
-					// This satisfies Requiremenet 9
+					// This satisfies Requirement 9
 					int i;
 					for(i=0;i<=jobsIndex;i++){
 						killProcess(i);
 					}
 				}
 			}
-			else exit(1);
+			else exit(1); // No pending processes
 		}
 
 		/* Additonal inbuilt functions start here */
+
 		if (isBuiltInCommand(com->command) == JOBS){
 			printJobs(jobs, jobsIndex+1);
 		}
@@ -274,13 +284,13 @@ int main (int argc, char **argv)
 		}
 		if (isBuiltInCommand(com->command) == HELP){
 			printf("help: prints this help screen.\n\n");
-			printf(" jobs - prints out the list of running background jobs.\n\n");
-			printf(" kill [process_id] - kills background process_id to kill a running background job.\n\n");
-			printf(" history - display a record of the last 100 commands typed.\n\n");
-			printf(" ![int] - execute [int] command in history array\n\n");
-			printf(" cd [location] - change directory\n\n");
-			printf(" sometext < infile.txt > outfile.txt - create a new process to run sometext and assign STDIN for the new process to infile and STDOUT for the new process to outfile\n\n");
-			printf(" exit - exit or quit shell.\n\n");
+			printf(" jobs - shows the list of active background jobs.\n\n");
+			printf(" kill <pid> - kills background process with pid showed in jobs.\n\n");
+			printf(" history - history of last few commands.\n\n");
+			printf(" !<int>- execute [int] command in history array\n\n");
+			printf(" cd <location> - change working directory\n\n");
+			printf(" command < infile.txt > outfile.txt - create a new process to run sometext and assign STDIN for the new process to infile and STDOUT for the new process to outfile\n\n");
+			printf(" exit - quit shell.\n\n");
 			printf("Append & to the end of any command to run it in the background.\n\n");
 
 		}
@@ -292,16 +302,14 @@ int main (int argc, char **argv)
 		strcpy(history[historyCount], cmdLine);
 		historyCount++;
 
-
 		if(info->boolBackground){
 			/*check if '&' was found | Need to run process in background*/
 			pid_t pid;
 
 			//Adding a new job
 			// convert this into a function
-			jobsIndex++;
-			jobsCount[0]++;
-			addJob(jobs, jobsIndex, cmdLine);
+
+			addJob(jobs, &jobsIndex, cmdLine);
 			//Done adding a new job
 
 			printf("Number of pending processes %d\n", jobsCount[0]);
@@ -318,13 +326,12 @@ int main (int argc, char **argv)
 			pid_t pid;
 			pid = fork(); // Making a child to run the command
 			if(pid==0){
-				if(strcmp(info->inFile,"")!=0){
+				if(info->boolInfile){
 					// Checks if a file was specified to be used as stdin
 					inputfile = fopen(info->inFile, "r");
 					dup2(fileno(inputfile), 0);
 				}
-
-				if(strcmp(info->outFile,"")!=0){
+				if(info->boolOutfile){
 					// Checks if a file was specified to be used as stdout
 					printf("outFile specified %s\n", info->outFile);
 					outputfile = fopen(info->outFile, "w");
@@ -335,12 +342,10 @@ int main (int argc, char **argv)
 				// If error happens then control comes here
 				exit(1);
 			}
-			else {
+
 				signal(SIGINT, INThandler);
-				//kill(pid, SIGKILL);
 				wait(&status); // Waiting for execvp to end
-				printf("\n");
-			}
+
 		}
 
 		fflush(stdout); // flushing the output
@@ -358,10 +363,6 @@ int main (int argc, char **argv)
 		dup2(STDOUT,1); // Resetting standard output to STDOUT
 
 		free_info(info);
-		/*
-		 * Note: There was a bug in free_info function which was not letting the
-		 * input and output pipes work ( "<" , ">") properly.
-		 */
 		free(cmdLine);
 	}/* while(1) */
 }

@@ -13,13 +13,13 @@
 #define COMPLETE 1
 
 typedef struct job{
-	int id;
-	char command[30];
-	int status;
-	int pid;
+	int id; // Stores Id of the process
+	char command[30]; // Stores the command passed in command line
+	int status; // 1 = complete, 0 = incomplete
+	int pid; // the pid assigned to this job by OS. Will be used to kill
 }job;
 
-void addJob(job *j, int, char *);
+void addJob(job *j, int *, char *);
 
 void deleteJob(job *j, int id);
 

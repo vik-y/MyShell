@@ -20,6 +20,6 @@ Requirement:
 	commands - Incomplete   
 	
 7. Repeating previous commands - Parsing done - Done
-8. inbuilt jobs - Done
+8. inbuilt jobs - kill remaining 
 9. show background processes to user before exiting - Incomplete
    Kill all the background processes before exiting - incomplete 
