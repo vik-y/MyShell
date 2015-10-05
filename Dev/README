@@ -1,14 +1,24 @@
+MyShell
+by Vikas Yadav
+IMT2013060
+---------------------------------------------------------
+
+Usage: 
+Run: make
+and then: ./shell 
+
+To exit the shell type: exit  
+
+
 Inbuilt commands added: 
-
-jobs 
-history
-
-
-Need to implement processes to run in background - assign them ID 
-and then kill them when completed 
+JOBS,
+CD,
+HISTORY,
+KILL,
+HELP
 
 
-Requirement:
+Requirements Met:
 1. printPrompt - Done
 2. No idea 
 3. Something related to path and execvp  - No Idea 

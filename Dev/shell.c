@@ -49,12 +49,15 @@ void printHistory(){
 void printPrompt(){
 	// Satisfies Requirement 1
 	char cwd[256];
+	char *username=getenv("USER");
+	char hostname[1024];
+	hostname[1023] = '\0';
+	gethostname(hostname, 1023);
 
-	if (getcwd(cwd, sizeof(cwd)) == 0){
+	if (getcwd(cwd, sizeof(cwd)) == NULL){
 		perror("getcwd() is not working");
 	}else{
-		printf("MyShell:%s",cwd);
-
+		printf("%s@%s:~%s", username, hostname, cwd);
 	}
 }
 
@@ -322,30 +325,51 @@ int main (int argc, char **argv)
 		}
 		else if(isBuiltInCommand(com->command)==NO_SUCH_BUILTIN){
 			// If not background then it should run in the foreground
-			int status;
+			int status, i;
 			pid_t pid;
-			pid = fork(); // Making a child to run the command
-			if(pid==0){
-				if(info->boolInfile){
-					// Checks if a file was specified to be used as stdin
-					inputfile = fopen(info->inFile, "r");
-					dup2(fileno(inputfile), 0);
+			struct commandType *comm;
+
+			for (i=0; i<=info->pipeNum;i++) {
+				// Should run till the number of pipes
+				comm=&(info->CommArray[i]);
+				if ((NULL == comm) || (NULL == comm->command)){
+					printf("Command %d is NULL\n", i);
+				} else {
+					pid = fork(); // Making a child to run the command
+					if(pid==0){
+						if(info->boolInfile){
+							// This case is changing input file
+							// Checks if a file was specified to be used as stdin
+							inputfile = fopen(info->inFile, "r");
+							dup2(fileno(inputfile), 0);
+						}
+						if(info->boolOutfile){
+							// This case is used for output redirection
+							// Checks if a file was specified to be used as stdout
+							printf("outFile specified %s\n", info->outFile);
+							outputfile = fopen(info->outFile, "w");
+							dup2(fileno(outputfile), 1);
+						}
+						if(info->pipeNum>0 && i<info->pipeNum){
+							// This case is used for handling pipes "|"
+							outputfile = fopen("out.txt", "w");
+							dup2(fileno(outputfile), 1);
+						}
+						if(i!=0){
+							// This case is used for handling pipes "|"
+							inputfile = fopen("out.txt", "r");
+							dup2(fileno(inputfile), 0);
+						}
+						execvp(comm->command, comm->VarList);
+						printf("Invalid Command. Command Not found\n");
+						// If error happens then control comes here
+						exit(1);
+					}
+
+					signal(SIGINT, INThandler); // Used to handle Ctrl+C events
+					wait(&status); // Waiting for execvp to end
 				}
-				if(info->boolOutfile){
-					// Checks if a file was specified to be used as stdout
-					printf("outFile specified %s\n", info->outFile);
-					outputfile = fopen(info->outFile, "w");
-					dup2(fileno(outputfile), 1);
-				}
-				execvp(com->command, com->VarList);
-				printf("Invalid Command. Command Not found\n");
-				// If error happens then control comes here
-				exit(1);
 			}
-
-				signal(SIGINT, INThandler);
-				wait(&status); // Waiting for execvp to end
-
 		}
 
 		fflush(stdout); // flushing the output
