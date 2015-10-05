@@ -61,5 +61,6 @@ Pressing Ctrl+C doesn't exit the shell. Instead it interrups the process
 which is running in the foreground and if no process is running in foreground
 then it does nothing. Shell can be exit only by typing "exit"
 
-A well documented code. 
+Modified makefile to remove the restrictions imposed by ansi standard
 
+A well documented code. 
