@@ -15,9 +15,6 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 
-#define HISTORYLENGTH 100 // 100 commands will be stored in history
-
-
 enum BUILTIN_COMMANDS {
 	NO_SUCH_BUILTIN=0,
 	EXIT,
@@ -38,6 +35,23 @@ void printHistory(){
 	/*Prints History*/
 	printf("History\n");
 	int i = 0;
+
+	while(history[i][0] != '\0'){
+		printf("%d  %s\n", i+1, *(history + i));
+		++i;
+	}
+}
+
+void print_N_History(int n){
+	/*
+	 * prints last N commands
+	 */
+
+	int i;
+	if(n<historyCount)
+		i= historyCount-n;
+	else
+		i=0;
 
 	while(history[i][0] != '\0'){
 		printf("%d  %s\n", i+1, *(history + i));
@@ -274,13 +288,20 @@ int main (int argc, char **argv)
 			if(com->VarNum>1){
 				//This modification has been done to implement the history -s num command
 				if(strcmp(com->VarList[1], "-s")==0)
-					{
-						printf("Changing the buffer size of history \n");
-						int bufsize = atoi(com->VarList[2]);
-						printf("Setting buffer size as: %d\n", bufsize);
-					}
+				{
+					printf("Changing the buffer size of history \n");
+					int bufsize = atoi(com->VarList[2]);
+					printf("Setting buffer size as: %d\n", bufsize);
+				}
+				else{
+					int n = atoi(com->VarList[1]);
+					print_N_History(n);
+				}
+
 			}
-			printHistory();
+			else{
+				printHistory(); // No argument given to history
+			}
 		}
 		if (isBuiltInCommand(com->command) == KILL){
 
