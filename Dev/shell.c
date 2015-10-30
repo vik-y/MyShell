@@ -261,7 +261,14 @@ int main (int argc, char **argv)
 		/*com->command tells the command name of com*/
 
 		if (isBuiltInCommand(com->command) == CD){
-			chdir(com->VarList[1]); // Working
+			if(com->VarList[1]!=NULL)
+				chdir(com->VarList[1]); // Working
+			else{
+				// goes to home if no argument provided
+				char location[50] = "/home/";
+				strcat(location, getenv("USER"));
+				chdir(location); // Goes to home
+			}
 		}
 
 		if (isBuiltInCommand(com->command) == EXIT){
