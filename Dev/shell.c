@@ -8,7 +8,7 @@
 #include <sys/types.h>
 #include <signal.h>
 #include "jobs.h" // Created a jobs.h and jobs.c file to handle background processes effectively
-#include "history.h"
+//#include "history.h"
 
 // Including for shared memory usage
 #include <sys/types.h>
@@ -271,6 +271,15 @@ int main (int argc, char **argv)
 			printJobs(jobs, jobsIndex+1);
 		}
 		if (isBuiltInCommand(com->command) == HISTORY){
+			if(com->VarNum>1){
+				//This modification has been done to implement the history -s num command
+				if(strcmp(com->VarList[1], "-s")==0)
+					{
+						printf("Changing the buffer size of history \n");
+						int bufsize = atoi(com->VarList[2]);
+						printf("Setting buffer size as: %d\n", bufsize);
+					}
+			}
 			printHistory();
 		}
 		if (isBuiltInCommand(com->command) == KILL){
