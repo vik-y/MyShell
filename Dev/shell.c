@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <signal.h>
 #include "jobs.h" // Created a jobs.h and jobs.c file to handle background processes effectively
+#include "history.h"
 
 // Including for shared memory usage
 #include <sys/types.h>
