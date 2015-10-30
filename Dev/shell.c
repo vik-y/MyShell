@@ -22,7 +22,8 @@ enum BUILTIN_COMMANDS {
 	CD,
 	HISTORY,
 	KILL,
-	HELP
+	HELP,
+	SETENV
 };
 
 int historyCount=0; //Stores number of items in history
@@ -103,6 +104,9 @@ isBuiltInCommand(char * cmd){
 	}
 	if ( strncmp(cmd, "help", strlen("help")) == 0){
 		return HELP;
+	}
+	if ( strncmp(cmd, "setenv", strlen("setenv")) == 0){
+		return SETENV;
 	}
 	return NO_SUCH_BUILTIN;
 }
@@ -324,9 +328,30 @@ int main (int argc, char **argv)
 			printf(" !<int>- execute [int] command in history array\n\n");
 			printf(" cd <location> - change working directory\n\n");
 			printf(" command < infile.txt > outfile.txt - create a new process to run sometext and assign STDIN for the new process to infile and STDOUT for the new process to outfile\n\n");
+			printf("setenv KEY=VALUE\n\n");
 			printf(" exit - quit shell.\n\n");
 			printf("Append & to the end of any command to run it in the background.\n\n");
 
+		}
+
+		// Shell Part 2 setenv
+		if (isBuiltInCommand(com->command) == SETENV){
+			// Appends key value pair at the end of the environment file
+			if(com->VarNum>1){
+				printf("Setenv detected\n");
+				char *key, *value;
+
+				key = strtok(com->VarList[1],"="); // Getting the key from passed parameter
+				//printf("Key: %s\n", key);
+
+				value = strtok(NULL, "="); // Getting the value from passed parameter
+				//printf("Value: %s\n", value);
+
+				setenv(key, value, 1); // 3rd parameter 1 will replace value if it exists
+				// Setting the environment variable done
+			}
+			else
+				printf("Usage: setenv KEY=VALUE\n");
 		}
 		/* Additional inbuilt functions end here */
 
