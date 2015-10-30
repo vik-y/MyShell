@@ -28,4 +28,6 @@ void insert(lnode **node, char *value);
 
 void printlist(lnode *node);
 
+char * swapDirectory(lnode **node);
+
 #endif /* LINKEDLIST_H_ */

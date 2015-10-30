@@ -36,6 +36,7 @@ int *jobsCount; // Stores number of background processes
 char history[100][20]; // Stores an array of commands
 job *jobs; // An array of pending jobs
 int jobsIndex=0; // Offset of where to add a new job in jobs array
+static int pushdUsed;
 
 void printHistory(){
 	/*Prints History*/
@@ -91,19 +92,15 @@ buildPrompt()
 
 void changeDirectory(char *loc){
 	if(loc!=NULL){
-		if(chdir(loc)==0)
+		if(chdir(loc)==0 && pushdUsed>0)
 			pushd(&dirs, getcwd(NULL, 0));
-		else
-			printf("directory not found\n");
 	}
 	else{
 		// goes to home if no argument provided
 		char location[50] = "/home/";
 		strcat(location, getenv("USER"));
-		if(chdir(location)==0)
+		if(chdir(location)==0 && pushdUsed>0)
 			pushd(&dirs, getcwd(NULL, 0)); // directory changed successfully
-		else
-			printf("directory not found\n");
 	}
 }
 
@@ -145,7 +142,7 @@ isBuiltInCommand(char * cmd){
 }
 
 void runInBackground(job *j, char *command){
-	/*
+	/*h
 	 * Used to run a job in background.
 	 * Helps in implement background jobs functionality
 	 */
@@ -215,7 +212,7 @@ void killProcess(int kill_pid){
 int main (int argc, char **argv)
 {
 	dirs = NULL;
-	static int pushdUsed=0;
+	pushdUsed=0;
 	char * cmdLine;
 	int shmid;
 	int jobOffset;
@@ -389,10 +386,37 @@ int main (int argc, char **argv)
 			else
 				printf("Usage: setenv KEY=VALUE\n");
 		}
+
+		// Shell part 2 pushd function
+
+		if(isBuiltInCommand(com->command) == PUSHD){
+			pushdUsed+=1;
+			if(com->VarNum>1){
+				changeDirectory(com->VarList[1]);
+			}
+			else{
+				pushdUsed = 0;
+				//swap directory
+				char *location = swapDirectory(&dirs);
+				if(location!=NULL){
+					changeDirectory(location);
+				}
+			}
+		}
+
+		if(isBuiltInCommand(com->command) == POPD){
+			pushdUsed=0;
+			char *location = popd(&dirs);
+			if(location!=NULL){
+				changeDirectory(location);
+			}
+			pushdUsed=1;
+		}
 		// Shell part 2 dirs function
 		if(isBuiltInCommand(com->command) == DIRS){
 			printlist(dirs);
 		}
+
 
 		/* Additional inbuilt functions end here */
 

@@ -71,6 +71,25 @@ void printlist(lnode *node){
 		printf("NULL");
 }
 
+char * swapDirectory(lnode **node){
+	// Will be used to switch between directories when pushd called
+	if(*node==NULL){
+		printf("Empty Stack\n");
+		return NULL;
+	}
+	else if((*node)->next==NULL){
+		printf("Only one entry in Stack\n");
+		return NULL;
+	}
+	else{
+		lnode * temp = (*node)->next;
+		(*node)->next = temp->next;
+		temp->next = *node;
+		*node = temp; // Swapping elements
+		return (*node)->dir;
+	}
+}
+
 /*int main(int argc, char **argv) {
 	lnode *head = NULL;
 	int count = 5;
