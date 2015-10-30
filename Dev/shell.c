@@ -7,8 +7,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <signal.h>
+#include "linkedList.h"
 #include "jobs.h" // Created a jobs.h and jobs.c file to handle background processes effectively
-//#include "history.h"
 
 // Including for shared memory usage
 #include <sys/types.h>
@@ -25,9 +25,12 @@ enum BUILTIN_COMMANDS {
 	HELP,
 	SETENV,
 	PUSHD,
-	POPD
+	POPD,
+	DIRS
 };
 
+lnode *dirs; // Shell Part 2. To store directories for using pushd and popd dirs is a linked list. see linkedList.c and linkedList.h
+// for more info
 int historyCount=0; //Stores number of items in history
 int *jobsCount; // Stores number of background processes
 char history[100][20]; // Stores an array of commands
@@ -86,6 +89,24 @@ buildPrompt()
 	return  "$ ";
 }
 
+void changeDirectory(char *loc){
+	if(loc!=NULL){
+		if(chdir(loc)==0)
+			pushd(&dirs, getcwd(NULL, 0));
+		else
+			printf("directory not found\n");
+	}
+	else{
+		// goes to home if no argument provided
+		char location[50] = "/home/";
+		strcat(location, getenv("USER"));
+		if(chdir(location)==0)
+			pushd(&dirs, getcwd(NULL, 0)); // directory changed successfully
+		else
+			printf("directory not found\n");
+	}
+}
+
 int
 isBuiltInCommand(char * cmd){
 	// added more builtin commands as per the requirement
@@ -115,6 +136,9 @@ isBuiltInCommand(char * cmd){
 	}
 	if ( strncmp(cmd, "popd", strlen("popd")) == 0){
 		return POPD;
+	}
+	if ( strncmp(cmd, "dirs", strlen("dirs")) == 0){
+		return DIRS;
 	}
 
 	return NO_SUCH_BUILTIN;
@@ -190,6 +214,8 @@ void killProcess(int kill_pid){
 
 int main (int argc, char **argv)
 {
+	dirs = NULL;
+	static int pushdUsed=0;
 	char * cmdLine;
 	int shmid;
 	int jobOffset;
@@ -270,14 +296,7 @@ int main (int argc, char **argv)
 		/*com->command tells the command name of com*/
 
 		if (isBuiltInCommand(com->command) == CD){
-			if(com->VarList[1]!=NULL)
-				chdir(com->VarList[1]); // Working
-			else{
-				// goes to home if no argument provided
-				char location[50] = "/home/";
-				strcat(location, getenv("USER"));
-				chdir(location); // Goes to home
-			}
+			changeDirectory(com->VarList[1]);
 		}
 
 		if (isBuiltInCommand(com->command) == EXIT){
@@ -350,6 +369,7 @@ int main (int argc, char **argv)
 
 		}
 
+
 		// Shell Part 2 setenv
 		if (isBuiltInCommand(com->command) == SETENV){
 			// Appends key value pair at the end of the environment file
@@ -369,6 +389,11 @@ int main (int argc, char **argv)
 			else
 				printf("Usage: setenv KEY=VALUE\n");
 		}
+		// Shell part 2 dirs function
+		if(isBuiltInCommand(com->command) == DIRS){
+			printlist(dirs);
+		}
+
 		/* Additional inbuilt functions end here */
 
 		/*insert your code here.*/
