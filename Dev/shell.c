@@ -23,7 +23,9 @@ enum BUILTIN_COMMANDS {
 	HISTORY,
 	KILL,
 	HELP,
-	SETENV
+	SETENV,
+	PUSHD,
+	POPD
 };
 
 int historyCount=0; //Stores number of items in history
@@ -108,6 +110,13 @@ isBuiltInCommand(char * cmd){
 	if ( strncmp(cmd, "setenv", strlen("setenv")) == 0){
 		return SETENV;
 	}
+	if ( strncmp(cmd, "pushd", strlen("pushd")) == 0){
+		return PUSHD;
+	}
+	if ( strncmp(cmd, "popd", strlen("popd")) == 0){
+		return POPD;
+	}
+
 	return NO_SUCH_BUILTIN;
 }
 
