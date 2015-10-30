@@ -2,7 +2,7 @@
  * linkedList.h
  *
  *  Created on: Oct 30, 2015
- *      Author: bobo
+ *      Author: Vikas Yadav
  */
 
 #ifndef LINKEDLIST_H_

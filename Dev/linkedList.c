@@ -64,7 +64,7 @@ void insert(lnode **node, char *value){
 void printlist(lnode *node){
 	/*A helper function to print all the nodes in the given linked list*/
 	if(node!=NULL) {
-		printf("%s ", node->dir);
+		printf("%s\n", node->dir);
 		printlist(node->next);
 	}
 	else

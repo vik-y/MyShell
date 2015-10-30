@@ -8,8 +8,8 @@ DEBUG=-g
 all: shell
 
 
-shell:	shell.c parse.c jobs.c parse.h
-	gcc $(CFLAGS) $(DEBUG) shell.c parse.c jobs.c -o shell $(LIB)
+shell:	shell.c parse.c jobs.c linkedList.c
+	gcc $(CFLAGS) $(DEBUG) shell.c parse.c jobs.c linkedList.c -o shell $(LIB)
 clean:
 	rm -f shell *~
 
