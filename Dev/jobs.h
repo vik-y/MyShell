@@ -25,4 +25,6 @@ void deleteJob(job *j, int id);
 
 void printJobs(job *j, int jobsIndex);
 
+int getProcessId(job *j, int jobsIndex);
+
 #endif /* JOBS_H_ */
