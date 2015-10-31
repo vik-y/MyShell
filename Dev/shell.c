@@ -31,6 +31,7 @@ enum BUILTIN_COMMANDS {
 	BG
 };
 
+int lastProcess;
 lnode *dirs; // Shell Part 2. To store directories for using pushd and popd dirs is a linked list. see linkedList.c and linkedList.h
 // for more info
 int historyCount=0; //Stores number of items in history
@@ -200,13 +201,20 @@ void  INThandler(int sig)
 	// Used to handle the Ctrl+C event
 	// An add on feature
 	char  c;
+	printf("Ctrl+C Pressed, Interrupt requested\n");
 	signal(sig, SIG_IGN);
 }
 
 // Shell part 2 to detect Ctrl+Z
 void STOPhandler(int sig){
-	printf("Ctrl+Z Pressed\n");
+	printf("Ctrl+Z Pressed, Pause requested\n");
 	signal(SIGTSTP, &STOPhandler);
+	// Need to pause the process which currently running : if any
+	if(lastProcess!=0){
+		//Pause the last process if it exists
+		kill(lastProcess,SIGTSTP);
+		printf("Process moved to background\n");
+	}
 }
 
 void killProcess(int kill_pid){
@@ -227,6 +235,8 @@ int main (int argc, char **argv)
 {
 	dirs = NULL;
 	pushdUsed=0;
+
+	lastProcess=0;
 	char * cmdLine;
 	int shmid;
 	int jobOffset;
@@ -259,6 +269,11 @@ int main (int argc, char **argv)
 	while(1){
 		/*insert your code to print prompt here*/
 
+		/*Registering Handlers here*/
+		signal(SIGINT, &INThandler); // Used to handle Ctrl+C events
+		signal(SIGTSTP, &STOPhandler);
+		/*Registering handlers done*/
+
 #ifdef UNIX
 		cmdLine = readline(buildPrompt());
 		if (cmdLine == NULL) {
@@ -266,6 +281,7 @@ int main (int argc, char **argv)
 			continue;
 		}
 #endif
+
 
 		/*insert your code about history and !x !-x here*/
 		if(cmdLine[0] == '!'){
@@ -438,7 +454,6 @@ int main (int argc, char **argv)
 			int pid = getProcessId(jobs, jobsIndex);
 			printf("Running background process: %d\n", pid);
 			waitpid(pid, &status, 0);
-
 		}
 
 		//Shell part 2 bg implementation
@@ -519,10 +534,7 @@ int main (int argc, char **argv)
 						// If error happens then control comes here
 						exit(1);
 					}
-
-					signal(SIGINT, INThandler); // Used to handle Ctrl+C events
-					signal(SIGTSTP, &STOPhandler);
-					wait(&status); // Waiting for execvp to end
+					//wait(&status); // Waiting for execvp to end
 				}
 			}
 		}

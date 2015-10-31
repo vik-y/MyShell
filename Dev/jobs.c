@@ -44,7 +44,7 @@ void printJobs(job *j, int jobsIndex){
 	}
 }
 
-int getProcessId(job *j, int *jobsIndex){
-	return j->pid;
+int getProcessId(job *j, int jobsIndex){
+	return j[jobsIndex].pid;
 }
 
