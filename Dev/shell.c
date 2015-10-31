@@ -26,7 +26,9 @@ enum BUILTIN_COMMANDS {
 	SETENV,
 	PUSHD,
 	POPD,
-	DIRS
+	DIRS,
+	FG,
+	BG
 };
 
 lnode *dirs; // Shell Part 2. To store directories for using pushd and popd dirs is a linked list. see linkedList.c and linkedList.h
@@ -136,6 +138,12 @@ isBuiltInCommand(char * cmd){
 	}
 	if ( strncmp(cmd, "dirs", strlen("dirs")) == 0){
 		return DIRS;
+	}
+	if ( strncmp(cmd, "fg", strlen("fg")) == 0){
+		return FG;
+	}
+	if ( strncmp(cmd, "bg", strlen("bg")) == 0){
+		return BG;
 	}
 
 	return NO_SUCH_BUILTIN;
@@ -415,6 +423,21 @@ int main (int argc, char **argv)
 		// Shell part 2 dirs function
 		if(isBuiltInCommand(com->command) == DIRS){
 			printlist(dirs);
+		}
+
+		//Shell part 2 fg implementation
+		if(isBuiltInCommand(com->command) == FG){
+			int status;
+			//Get Pid of last process which needs to come to foreground
+			int pid = getProcessId(jobs, jobsIndex);
+			printf("Running background process: %d\n", pid);
+			waitpid(pid, &status, 0);
+
+		}
+
+		//Shell part 2 bg implementation
+		if(isBuiltInCommand(com->command) == BG){
+			printf("bg pressed\n");
 		}
 
 

@@ -42,6 +42,9 @@ void printJobs(job *j, int jobsIndex){
 			if(i!=0 && j[i].status==0) printf("%d	%s\n", j[i].id, j[i].command);
 		}
 	}
+}
 
+int getProcessId(job *j, int *jobsIndex){
+	return j->pid;
 }
 
