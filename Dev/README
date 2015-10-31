@@ -1,4 +1,26 @@
-MyShell
+MyShell Part 2
+by Vikas Yadav
+IMT2013060
+----------------------------------------------------------------------
+
+Usage:
+Same as part 1
+
+Inbuilt commands added in part 2
+-----------------------------------------------------------------------
+SETENV,
+PUSHD,
+POPD,
+DIRS,
+FG,
+BG
+
+Requirements completed:
+-----------------------------------------------------------------------
+All requirements mentioned in the pdf are met
+
+
+MyShell Part 1 
 by Vikas Yadav
 IMT2013060
 -----------------------------------------------------------------------
@@ -27,6 +49,7 @@ Requirements Completed:
 All requirements mentioned in the pdf are met.
 
 How jobs were implemented? 
+-----------------------------------------------------------------------
 Made a structure job. Made an array of it and allocated it as a shared 
 memory so that all processes could see it. Whenever background job 
 was requested, a new fork was made which added to the new job to 
