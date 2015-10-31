@@ -203,6 +203,12 @@ void  INThandler(int sig)
 	signal(sig, SIG_IGN);
 }
 
+// Shell part 2 to detect Ctrl+Z
+void STOPhandler(int sig){
+	printf("Ctrl+Z Pressed\n");
+	signal(SIGTSTP, &STOPhandler);
+}
+
 void killProcess(int kill_pid){
 	/*
 	 * Kills a process with pid <kill_pid> in the shell
@@ -515,6 +521,7 @@ int main (int argc, char **argv)
 					}
 
 					signal(SIGINT, INThandler); // Used to handle Ctrl+C events
+					signal(SIGTSTP, &STOPhandler);
 					wait(&status); // Waiting for execvp to end
 				}
 			}
